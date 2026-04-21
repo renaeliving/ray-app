@@ -712,7 +712,15 @@
     function getIntroUrlForPlan(planName) {
       return PRO_PLAN_NAMES.includes(planName) ? PRO_INTRO_URL : BASIC_INTRO_URL;
     }
+function maybeAutoPlayWelcome() {
+  const welcomeKey = "rayWelcomePlayed";
+  const alreadyPlayed = localStorage.getItem(welcomeKey) === "true";
 
+  if (alreadyPlayed) return;
+
+  localStorage.setItem(welcomeKey, "true");
+  replayWelcome();
+}
     function replayWelcome() {
       try {
         const introUrl = getIntroUrlForPlan(wixPlanName);
@@ -1345,6 +1353,7 @@ function clearChatHistory() {
     });
 
     initializePage();
+    maybeAutoPlayWelcome();
   </script>
 </body>
 </html>
