@@ -521,6 +521,7 @@
     const sendChatBtn = document.getElementById("send-chat-btn");
     const downloadChatBtn = document.getElementById("download-chat-btn");
     const chatStatusEl = document.getElementById("chat-status");
+    const clearChatBtn = document.getElementById("clear-chat-btn");
 
     const replayWelcomeBtn = document.getElementById("replay-welcome-btn");
     const voiceStateEl = document.getElementById("voice-state");
@@ -880,7 +881,10 @@
         projectContextStatus.textContent = "Mode: General project coaching";
       }
     }
-
+function clearChatHistory() {
+  chatHistoryEl.innerHTML = "";
+  chatStatusEl.textContent = "Chat cleared.";
+}
     function downloadChatTranscript() {
       const projectName = getSelectedProjectName() || "general";
       const safeProjectName = projectName.replace(/[^a-z0-9-_]+/gi, "_");
@@ -1329,6 +1333,7 @@
     beginBtn.addEventListener("click", beginConversation);
     stopConversationBtn.addEventListener("click", stopConversation);
     sendChatBtn.addEventListener("click", sendChatMessage);
+    clearChatBtn.addEventListener("click", clearChatHistory);
     downloadChatBtn.addEventListener("click", downloadChatTranscript);
 
     chatInput.addEventListener("keydown", (e) => {
