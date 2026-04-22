@@ -652,7 +652,8 @@
         const blob = new Blob([byteArray], { type: "audio/mpeg" });
         currentReplyAudioUrl = URL.createObjectURL(blob);
         currentReplyAudio = new Audio(currentReplyAudioUrl);
-        currentReplyAudio.playbackRate = 1.18;
+        currentReplyAudio.playbackRate = 1.0;
+        pauseRayBtn.textContent = "Pause Ray";
 
         currentReplyAudio.onplay = () => {
           setVoiceState("speaking", "Ray is speaking...");
