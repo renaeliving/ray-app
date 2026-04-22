@@ -330,37 +330,48 @@
         <div id="chat-history"></div>
       </section>
 
-      <section class="upload-panel" id="upload-panel">
-        <h2>Upload your project schedule as a CSV</h2>
-        <p>
-          Ray can analyze your schedule in detail and highlight risks, identify issues, and recommend specific actions to keep your project on track.
-        </p>
+    <section class="upload-panel" id="upload-panel">
+  <h2>Upload your project schedule as a CSV</h2>
+  <p>
+    Ray can analyze your schedule in detail and highlight risks, identify issues, and recommend specific actions to keep your project on track.
+  </p>
 
-        <div class="upload-row">
-          <input type="file" id="schedule-file" accept=".csv" />
-          <button id="analyze-btn" class="upload-btn" type="button">Analyze schedule</button>
-        </div>
+  <div class="upload-row">
+    <input type="file" id="schedule-file" accept=".csv" />
+    <button id="analyze-btn" class="upload-btn" type="button">Analyze schedule</button>
+  </div>
 
-        <div style="margin-top:-2px; margin-bottom:10px;">
-          <button
-            id="csv-format-help-btn"
-            type="button"
-            style="
-              background:none;
-              border:none;
-              padding:0;
-              color:#38bdf8;
-              font-size:0.82rem;
-              cursor:pointer;
-              text-decoration:underline;
-            "
-          >
-            What should my CSV include?
-          </button>
-        </div>
+  <div id="upload-locked-message" style="display:none; margin:6px 0 10px; font-size:0.85rem; color:#cbd5e1;">
+    Upgrade to
+    <a
+      href="https://www.projectpilot.ai/pricing-plans/list"
+      target="_blank"
+      rel="noopener noreferrer"
+      style="color:#38bdf8; text-decoration:underline;"
+    >Ray Pro</a>
+    to access schedule uploads and analysis.
+  </div>
 
-        <div id="upload-status"></div>
-      </section>
+  <div style="margin-top:-2px; margin-bottom:10px;">
+    <button
+      id="csv-format-help-btn"
+      type="button"
+      style="
+        background:none;
+        border:none;
+        padding:0;
+        color:#38bdf8;
+        font-size:0.82rem;
+        cursor:pointer;
+        text-decoration:underline;
+      "
+    >
+      What should my CSV include?
+    </button>
+  </div>
+
+  <div id="upload-status"></div>
+</section>
 
       <div id="upgrade-panel" class="upload-panel" style="display:none;">
         <h2>Want deeper project insight?</h2>
@@ -508,11 +519,12 @@
     const newProjectNameInput = document.getElementById("new-project-name");
     const projectContextStatus = document.getElementById("project-context-status");
 
-    const fileInput = document.getElementById("schedule-file");
-    const analyzeBtn = document.getElementById("analyze-btn");
-    const statusEl = document.getElementById("upload-status");
-    const uploadPanelEl = document.getElementById("upload-panel");
-    const upgradePanelEl = document.getElementById("upgrade-panel");
+   const fileInput = document.getElementById("schedule-file");
+const analyzeBtn = document.getElementById("analyze-btn");
+const statusEl = document.getElementById("upload-status");
+const uploadPanelEl = document.getElementById("upload-panel");
+const uploadLockedMessageEl = document.getElementById("upload-locked-message");
+const upgradePanelEl = document.getElementById("upgrade-panel");
     const csvFormatHelpBtn = document.getElementById("csv-format-help-btn");
     const csvFormatModal = document.getElementById("csv-format-modal");
     const closeCsvFormatModalBtn = document.getElementById("close-csv-format-modal");
@@ -533,10 +545,13 @@ const stopConversationBtn = document.getElementById("stop-conversation-btn");
 const openMicIndicatorEl = document.getElementById("open-mic-indicator");
 const openMicTextEl = document.getElementById("open-mic-text");
 
-    let wixPlanName = "";
-    const uploadAllowedPlans = ["Ray Pro", "Ray Pro Annual", "Temp Ray Access - Pro"];
-    const PRO_PLAN_NAMES = ["Ray Pro", "Ray Pro Annual", "Temp Ray Access - Pro"];
+   
+   let wixPlanName = "";
+const RAY_COACH_PLAN_NAMES = ["Ray Coach", "Temp Ray Access - Coach"];
+const uploadAllowedPlans = ["Ray Pro", "Ray Pro Annual", "Temp Ray Access - Pro"];
+const PRO_PLAN_NAMES = ["Ray Pro", "Ray Pro Annual", "Temp Ray Access - Pro"];
 
+    
     let currentReplyAudio = null;
     let currentReplyAudioUrl = null;
     let welcomeAudio = null;
@@ -1295,22 +1310,53 @@ const openMicTextEl = document.getElementById("open-mic-text");
         csvFormatModal.style.display = "none";
       }
     });
+function applyUploadAccess(planName) {
+  const hasUploadAccess = uploadAllowedPlans.includes(planName);
+  const isCoachPlan = RAY_COACH_PLAN_NAMES.includes(planName);
 
+  fileInput.disabled = !hasUploadAccess;
+  analyzeBtn.disabled = !hasUploadAccess;
+
+  if (hasUploadAccess) {
+    fileInput.style.opacity = "1";
+    analyzeBtn.style.opacity = "1";
+    uploadLockedMessageEl.style.display = "none";
+    if (!statusEl.textContent.includes("Uploading") && !statusEl.textContent.includes("Schedule uploaded")) {
+      statusEl.textContent = "";
+    }
+    return;
+  }
+
+  if (isCoachPlan) {
+    fileInput.style.opacity = "0.65";
+    analyzeBtn.style.opacity = "0.65";
+    uploadLockedMessageEl.style.display = "";
+    statusEl.textContent = "Schedule upload is available with Ray Pro.";
+    return;
+  }
+
+  fileInput.style.opacity = "1";
+  analyzeBtn.style.opacity = "1";
+  uploadLockedMessageEl.style.display = "none";
+}
     window.addEventListener("message", (event) => {
-      const data = event.data || {};
-      if (!data.planName) return;
+  const data = event.data || {};
+  if (!data.planName) return;
 
-      wixPlanName = data.planName;
-      const uploadHidden = !uploadAllowedPlans.includes(wixPlanName);
+  wixPlanName = data.planName;
 
-      if (uploadPanelEl) {
-        uploadPanelEl.style.display = uploadHidden ? "none" : "";
-      }
+  applyUploadAccess(wixPlanName);
 
-      if (upgradePanelEl) {
-        upgradePanelEl.style.display = uploadHidden ? "" : "none";
-      }
-    });
+  const isTryRayLikePlan = !wixPlanName || (!uploadAllowedPlans.includes(wixPlanName) && !RAY_COACH_PLAN_NAMES.includes(wixPlanName));
+
+  if (uploadPanelEl) {
+    uploadPanelEl.style.display = "";
+  }
+
+  if (upgradePanelEl) {
+    upgradePanelEl.style.display = isTryRayLikePlan ? "" : "none";
+  }
+});
 
     function initializePage() {
       loadProjectsForUser().finally(() => {
@@ -1334,6 +1380,10 @@ const openMicTextEl = document.getElementById("open-mic-text");
     newProjectNameInput.addEventListener("input", updateProjectContextStatus);
 
     analyzeBtn.addEventListener("click", async () => {
+      if (!uploadAllowedPlans.includes(wixPlanName)) {
+      statusEl.innerHTML = `Upgrade to <a href="https://www.projectpilot.ai/pricing-plans/list" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; text-decoration:underline;">Ray Pro</a> to access schedule uploads and analysis.`;
+      return;
+}
       const file = fileInput.files[0];
       const projectName = getSelectedProjectName();
 
