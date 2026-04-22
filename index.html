@@ -5,7 +5,6 @@
   <title>Ray – Your AI Project Coach</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    
     :root {
       --border-soft: #1f2937;
       --accent-strong: #38bdf8;
@@ -305,19 +304,19 @@
       </section>
 
       <section class="upload-panel">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
-  <div style="min-width:240px; flex:1;">
-    <h2>Chat with Ray</h2>
-    <p>
-      Ask Ray about risks, issues, milestones, planning, priorities, and next steps.
-    </p>
-  </div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
+          <div style="min-width:240px; flex:1;">
+            <h2>Chat with Ray</h2>
+            <p>
+              Ask Ray about risks, issues, milestones, planning, priorities, and next steps.
+            </p>
+          </div>
 
-  <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
-    <button id="clear-chat-btn" class="tiny-chat-btn" type="button">Clear Chat</button>
-    <button id="download-chat-btn" class="tiny-chat-btn" type="button">Download</button>
-  </div>
-</div>
+          <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
+            <button id="clear-chat-btn" class="tiny-chat-btn" type="button">Clear Chat</button>
+            <button id="download-chat-btn" class="tiny-chat-btn" type="button">Download</button>
+          </div>
+        </div>
 
         <div class="upload-row">
           <input type="text" id="chat-input" placeholder="Ask Ray a question..." />
@@ -558,8 +557,8 @@
     let listeningResumeAt = 0;
 
     const VOLUME_THRESHOLD = 0.035;
-    const SILENCE_MS = 1100;
-    const MIN_AUDIO_BYTES = 2500;
+    const SILENCE_MS = 1500;
+    const MIN_AUDIO_BYTES = 6000;
 
     function escapeHtml(text) {
       return String(text)
@@ -712,15 +711,17 @@
     function getIntroUrlForPlan(planName) {
       return PRO_PLAN_NAMES.includes(planName) ? PRO_INTRO_URL : BASIC_INTRO_URL;
     }
-function maybeAutoPlayWelcome() {
-  const welcomeKey = "rayWelcomePlayed";
-  const alreadyPlayed = localStorage.getItem(welcomeKey) === "true";
 
-  if (alreadyPlayed) return;
+    function maybeAutoPlayWelcome() {
+      const welcomeKey = "rayWelcomePlayed";
+      const alreadyPlayed = localStorage.getItem(welcomeKey) === "true";
 
-  localStorage.setItem(welcomeKey, "true");
-  replayWelcome();
-}
+      if (alreadyPlayed) return;
+
+      localStorage.setItem(welcomeKey, "true");
+      replayWelcome();
+    }
+
     function replayWelcome() {
       try {
         const introUrl = getIntroUrlForPlan(wixPlanName);
@@ -890,10 +891,12 @@ function maybeAutoPlayWelcome() {
         projectContextStatus.textContent = "Mode: General project coaching";
       }
     }
-function clearChatHistory() {
-  chatHistoryEl.innerHTML = "";
-  chatStatusEl.textContent = "Chat cleared.";
-}
+
+    function clearChatHistory() {
+      chatHistoryEl.innerHTML = "";
+      chatStatusEl.textContent = "Chat cleared.";
+    }
+
     function downloadChatTranscript() {
       const projectName = getSelectedProjectName() || "general";
       const safeProjectName = projectName.replace(/[^a-z0-9-_]+/gi, "_");
@@ -1183,16 +1186,37 @@ function clearChatHistory() {
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Voice chat failed");
+
+        if (!res.ok) {
+          if ((data.error || "").toLowerCase().includes("could not transcribe audio")) {
+            chatStatusEl.textContent = conversationActive
+              ? "Open Mic on. Start speaking any time."
+              : "";
+            return;
+          }
+          throw new Error(data.error || "Voice chat failed");
+        }
+
+        if (!data.transcript && !data.reply) {
+          chatStatusEl.textContent = conversationActive
+            ? "Open Mic on. Start speaking any time."
+            : "";
+          return;
+        }
 
         if (data.transcript) {
           addChatMessage("user", data.transcript);
         }
 
-        const reply = data.reply || "No response.";
-        addChatMessage("assistant", reply);
-        chatStatusEl.textContent = "";
-        speakReply(reply);
+        if (data.reply) {
+          addChatMessage("assistant", data.reply);
+          chatStatusEl.textContent = "";
+          speakReply(data.reply);
+        } else {
+          chatStatusEl.textContent = conversationActive
+            ? "Open Mic on. Start speaking any time."
+            : "";
+        }
 
         const projectName = getSelectedProjectName();
         if (projectName) {
@@ -1309,18 +1333,18 @@ function clearChatHistory() {
           return;
         }
 
-        statusEl.textContent = "Schedule uploaded. Ray added the review to the chat.";
+        const uploadReply =
+          data.reply || data.analysis || "I reviewed your schedule, but no analysis text was returned.";
 
-        addChatMessage(
-          "assistant",
-          data.reply || "I reviewed your schedule, but no analysis text was returned."
-        );
+        addChatMessage("assistant", uploadReply);
 
         if (data.audioBase64) {
           playAudioBase64(data.audioBase64);
         } else {
-          speakReply(data.reply || "");
+          speakReply(uploadReply);
         }
+
+        statusEl.textContent = "Schedule uploaded and review added to chat.";
 
         addProjectNameToSavedList(projectName);
         localStorage.setItem(LAST_PROJECT_KEY, projectName);
