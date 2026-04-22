@@ -651,7 +651,7 @@
         const blob = new Blob([byteArray], { type: "audio/mpeg" });
         currentReplyAudioUrl = URL.createObjectURL(blob);
         currentReplyAudio = new Audio(currentReplyAudioUrl);
-        currentReplyAudio.playbackRate = 1.08;
+        currentReplyAudio.playbackRate = 1.18;
         
 
         currentReplyAudio.onplay = () => {
@@ -733,7 +733,7 @@
 
         if (!welcomeAudio) {
           welcomeAudio = new Audio(introUrl);
-          welcomeAudio.playbackRate = 1.08;
+          welcomeAudio.playbackRate = 1.18;
 
           welcomeAudio.onplay = () => {
             isPlayingWelcome = true;
