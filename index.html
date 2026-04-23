@@ -545,7 +545,11 @@ const PRO_INTRO_URL = "https://static.wixstatic.com/mp3/3cf059_02e35ad96b454a4eb
 const PROJECT_NAMES_KEY = "rayProjectNames";
 const LAST_PROJECT_KEY = "rayLastProjectName";
 const NEW_PROJECT_SENTINEL = "__new__";
-const WELCOME_PLAYED_KEY = "rayWelcomePlayed_v3";
+
+    function getWelcomePlayedKey(planName) {
+  const safePlan = (planName || "unknown").replace(/[^a-z0-9]+/gi, "_").toLowerCase();
+  return `rayWelcomePlayed_${safePlan}_v1`;
+}
 
 const PLAN_PRO_MONTHLY = "Ray Pro";
 const PLAN_PRO_ANNUAL = "Ray Pro Annual";
@@ -821,13 +825,8 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
       return TRY_INTRO_URL;
     }
 
-   function maybeAutoPlayWelcome() {
+ function maybeAutoPlayWelcome() {
   if (!hasResolvedPlan) return;
-
-  const alreadyPlayed = localStorage.getItem(WELCOME_PLAYED_KEY) === "true";
-  if (alreadyPlayed) return;
-
-  localStorage.setItem(WELCOME_PLAYED_KEY, "true");
   replayWelcome();
 }
 
