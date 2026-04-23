@@ -540,11 +540,21 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     alert("RAY APP FILE LOADED");
-    function getWixUserId() {
-      return localStorage.getItem("wixMemberId")
-        || sessionStorage.getItem("wixMemberId")
-        || "";
-    }
+   function getWixUserId() {
+  const savedId =
+    localStorage.getItem("wixMemberId") ||
+    sessionStorage.getItem("wixMemberId");
+
+  if (savedId) return savedId;
+
+  let fallbackId = localStorage.getItem("rayProFallbackUserId");
+  if (!fallbackId) {
+    fallbackId = "raypro-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem("rayProFallbackUserId", fallbackId);
+  }
+
+  return fallbackId;
+}
 
     function getWixMemberName() {
       return localStorage.getItem("wixMemberName")
