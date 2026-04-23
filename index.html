@@ -310,6 +310,16 @@
 
     <div id="ray-main">
       <section class="upload-panel">
+        <div id="coach-title" style="
+  max-width: 850px;
+  width: 100%;
+  margin: 0 auto 4px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #f9fafb;
+"></div>
         <h2>Project Menu</h2>
         <p>
           Select an existing project or choose <strong>Add new project...</strong> to create one.
@@ -526,8 +536,10 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     function getWixUserId() {
-      return localStorage.getItem("wixMemberId") || "";
-    }
+  return localStorage.getItem("wixMemberId")
+    || sessionStorage.getItem("wixMemberId")
+    || "";
+}
 
     const BACKEND_BASE = "https://projectpilot-backend-zkad.onrender.com";
     const UPLOAD_URL = `${BACKEND_BASE}/api/upload-schedule`;
@@ -546,60 +558,6 @@ const PROJECT_NAMES_KEY = "rayProjectNames";
 const LAST_PROJECT_KEY = "rayLastProjectName";
 const NEW_PROJECT_SENTINEL = "__new__";
 
-function replayWelcome() {
-  try {
-    const introUrl = getIntroUrlForPlan(wixPlanName);
-
-    if (!introUrl) return;
-
-    stopReplyAudio();
-
-    if (!welcomeAudio) {
-      welcomeAudio = new Audio(introUrl);
-      welcomeAudio.playbackRate = 1.18;
-
-      welcomeAudio.onplay = () => {
-        isPlayingWelcome = true;
-        if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
-        setVoiceState("speaking", "Playing welcome...");
-      };
-
-      welcomeAudio.onended = () => {
-        if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
-        isPlayingWelcome = false;
-        chatStatusEl.textContent = conversationActive ? "Open Mic on. Start speaking any time." : "";
-        if (conversationActive) {
-          setVoiceState("listening", "Open Mic on");
-        } else {
-          setVoiceState("idle", "");
-        }
-      };
-
-      welcomeAudio.onerror = () => {
-        if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
-        isPlayingWelcome = false;
-        chatStatusEl.textContent = "";
-        if (conversationActive) {
-          setVoiceState("listening", "Open Mic on");
-        } else {
-          setVoiceState("idle", "");
-        }
-      };
-    } else {
-      welcomeAudio.pause();
-      welcomeAudio.currentTime = 0;
-      if (welcomeAudio.src !== introUrl) {
-        welcomeAudio.src = introUrl;
-      }
-    }
-
-    welcomeAudio.play().catch((err) => {
-      console.error("Intro audio could not play:", err);
-    });
-  } catch (err) {
-    console.error(err);
-  }
-}
 
 const PLAN_PRO_MONTHLY = "Ray Pro";
 const PLAN_PRO_ANNUAL = "Ray Pro Annual";
@@ -876,7 +834,7 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
     }
 
  function maybeAutoPlayWelcome() {
-  if (!hasResolvedPlan) return;
+  if (isplayingwelcome || currentReplyAudio) return;
   replayWelcome();
 }
 
@@ -1374,7 +1332,7 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
     async function sendVoiceBlob(blob) {
       const formData = new FormData();
       formData.append("audio", blob, "voice.webm");
-      formData.append("userId", getWixUserId() || "anonymous");
+      formData.append("userId", getWixUserId());
       formData.append("projectName", getSelectedProjectName());
 
       sendChatBtn.disabled = true;
@@ -1456,7 +1414,7 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
       }
     });
 
-   window.addEventListener("message", (event) => {
+  window.addEventListener("message", (event) => {
   console.log("Ray app received message:", event.data);
 
   const data = event.data || {};
@@ -1464,6 +1422,22 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
 
   wixPlanName = (data.planName || "").trim();
   hasResolvedPlan = true;
+
+  if (data.memberId) {
+    localStorage.setItem("wixMemberId", data.memberId);
+    sessionStorage.setItem("wixMemberId", data.memberId);
+  }
+
+  if (data.memberName) {
+    localStorage.setItem("wixMemberName", data.memberName);
+    sessionStorage.setItem("wixMemberName", data.memberName);
+
+    const firstName = String(data.memberName).trim().split(" ")[0];
+    const titleEl = document.getElementById("coach-title");
+    if (titleEl && firstName) {
+      titleEl.textContent = `${firstName}'s AI Coach`;
+    }
+  }
 
   console.log("Resolved Wix plan name:", wixPlanName);
 
@@ -1473,11 +1447,9 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
   maybeAutoPlayWelcome();
 });
 
-   setTimeout(() => {
-  if (!hasResolvedPlan) {
-    console.warn("Ray access check did not resolve. Staying on page for debugging.");
-  }
-}, 2500);
+  setTimeout(() => {
+  replayWelcome();
+}, 700);
 
     function initializePage() {
       loadProjectsForUser().finally(() => {
@@ -1485,7 +1457,14 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
       });
       updateOpenMicIndicator();
     }
-
+const savedName = localStorage.getItem("wixMemberName") || sessionStorage.getItem("wixMemberName") || "";
+if (savedName) {
+  const firstName = savedName.trim().split(" ")[0];
+  const titleEl = document.getElementById("coach-title");
+  if (titleEl && firstName) {
+    titleEl.textContent = `${firstName}'s AI Coach`;
+  }
+}
     projectNameInput.addEventListener("change", () => {
       const selected = projectNameInput.value.trim();
 
@@ -1508,6 +1487,11 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
 
       const file = fileInput.files[0];
       const projectName = getSelectedProjectName();
+      const currentUserId = getWixUserId();
+if (!currentUserId) {
+  statusEl.textContent = "User session not found. Please return to the site and launch Ray again.";
+  return;
+}
 
       if (!projectName) {
         statusEl.textContent = "Please select a project or add a new one before uploading a schedule.";
@@ -1523,7 +1507,7 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
 
       const formData = new FormData();
       formData.append("schedule", file);
-      formData.append("userId", getWixUserId() || "anonymous");
+      formData.append("userId", currentUserId);
       formData.append("projectName", projectName);
 
       analyzeBtn.disabled = true;
