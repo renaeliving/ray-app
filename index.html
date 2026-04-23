@@ -1467,6 +1467,12 @@
       const data = event.data || {};
       if (typeof data.planName === "undefined") return;
 
+      alert("PLAN=" + (data.planName || ""));
+alert("MEMBERID=" + (data.memberId || ""));
+alert("MEMBERNAME=" + (data.memberName || ""));
+
+      
+
       wixPlanName = (data.planName || "").trim();
       hasResolvedPlan = true;
 
