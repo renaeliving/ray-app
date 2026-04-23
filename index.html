@@ -594,7 +594,7 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
   const isAllowed = RAY_APP_ALLOWED_PLANS.includes(normalizedPlan);
 
   if (!isAllowed) {
-    window.location.href = TRY_RAY_URL;
+   window.location.replace(TRY_RAY_URL);
     return false;
   }
 
@@ -1407,12 +1407,16 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
       }
     });
 
-    window.addEventListener("message", (event) => {
+   window.addEventListener("message", (event) => {
+  console.log("Ray app received message:", event.data);
+
   const data = event.data || {};
   if (typeof data.planName === "undefined") return;
 
   wixPlanName = (data.planName || "").trim();
   hasResolvedPlan = true;
+
+  console.log("Resolved Wix plan name:", wixPlanName);
 
   if (!enforcePageAccess(wixPlanName)) return;
 
@@ -1420,9 +1424,9 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
   maybeAutoPlayWelcome();
 });
 
-    setTimeout(() => {
+   setTimeout(() => {
   if (!hasResolvedPlan) {
-    window.location.href = TRY_RAY_URL;
+    console.warn("Ray access check did not resolve. Staying on page for debugging.");
   }
 }, 2500);
 
