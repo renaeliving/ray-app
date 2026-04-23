@@ -1498,13 +1498,21 @@ alert("MEMBERNAME=" + (data.memberName || ""));
       maybeAutoPlayWelcome();
     });
 
-    function initializePage() {
-      loadProjectsForUser().finally(() => {
-        syncProjectInputMode();
-      });
-      updateOpenMicIndicator();
-      setCoachTitle(getWixMemberName());
-    }
+ function initializePage() {
+  loadProjectsForUser().finally(() => {
+    syncProjectInputMode();
+  });
+
+  updateOpenMicIndicator();
+  setCoachTitle(getWixMemberName());
+
+  if (!hasResolvedPlan) {
+    wixPlanName = "Ray Pro";
+    hasResolvedPlan = true;
+    applyUploadAccess(wixPlanName);
+    maybeAutoPlayWelcome();
+  }
+}
 
     projectNameInput.addEventListener("change", () => {
       const selected = projectNameInput.value.trim();
