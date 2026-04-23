@@ -546,9 +546,59 @@ const PROJECT_NAMES_KEY = "rayProjectNames";
 const LAST_PROJECT_KEY = "rayLastProjectName";
 const NEW_PROJECT_SENTINEL = "__new__";
 
-    function getWelcomePlayedKey(planName) {
-  const safePlan = (planName || "unknown").replace(/[^a-z0-9]+/gi, "_").toLowerCase();
-  return `rayWelcomePlayed_${safePlan}_v1`;
+function replayWelcome() {
+  try {
+    const introUrl = getIntroUrlForPlan(wixPlanName);
+
+    if (!introUrl) return;
+
+    stopReplyAudio();
+
+    if (!welcomeAudio) {
+      welcomeAudio = new Audio(introUrl);
+      welcomeAudio.playbackRate = 1.18;
+
+      welcomeAudio.onplay = () => {
+        isPlayingWelcome = true;
+        if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
+        setVoiceState("speaking", "Playing welcome...");
+      };
+
+      welcomeAudio.onended = () => {
+        if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
+        isPlayingWelcome = false;
+        chatStatusEl.textContent = conversationActive ? "Open Mic on. Start speaking any time." : "";
+        if (conversationActive) {
+          setVoiceState("listening", "Open Mic on");
+        } else {
+          setVoiceState("idle", "");
+        }
+      };
+
+      welcomeAudio.onerror = () => {
+        if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
+        isPlayingWelcome = false;
+        chatStatusEl.textContent = "";
+        if (conversationActive) {
+          setVoiceState("listening", "Open Mic on");
+        } else {
+          setVoiceState("idle", "");
+        }
+      };
+    } else {
+      welcomeAudio.pause();
+      welcomeAudio.currentTime = 0;
+      if (welcomeAudio.src !== introUrl) {
+        welcomeAudio.src = introUrl;
+      }
+    }
+
+    welcomeAudio.play().catch((err) => {
+      console.error("Intro audio could not play:", err);
+    });
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 const PLAN_PRO_MONTHLY = "Ray Pro";
@@ -1526,7 +1576,9 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
       }
     });
 
-    replayWelcomeBtn.addEventListener("click", replayWelcome);
+   replayWelcomeBtn.addEventListener("click", () => {
+  maybeAutoPlayWelcome(true);
+});
     beginBtn.addEventListener("click", beginConversation);
     pauseRayBtn.addEventListener("click", togglePauseRay);
     stopConversationBtn.addEventListener("click", stopConversation);
@@ -1540,7 +1592,11 @@ const RAY_APP_ALLOWED_PLANS = [...PRO_PLAN_NAMES, ...RAY_COACH_PLAN_NAMES];
         sendChatMessage();
       }
     });
-
+setTimeout(() => {
+  if (!isPlayingWelcome && !currentReplyAudio) {
+    maybeAutoPlayWelcome();
+  }
+}, 1200);
     initializePage();
   </script>
 </body>
