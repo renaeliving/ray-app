@@ -854,14 +854,14 @@ function stopRayVoiceOnly() {
         currentReplyAudio = new Audio(currentReplyAudioUrl);
         currentReplyAudio.playbackRate = 1.18;
 
-        if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
+        updateRayMuteButton();
 
         currentReplyAudio.onplay = () => {
           setVoiceState("speaking", "Ray is speaking...");
         };
 
         currentReplyAudio.onended = () => {
-          if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
+          updateRayMuteButton();
           listeningResumeAt = Date.now() + 450;
           stopReplyAudio();
           chatStatusEl.textContent = conversationActive ? "Open Mic on. Start speaking any time." : "";
@@ -871,7 +871,7 @@ function stopRayVoiceOnly() {
         };
 
         currentReplyAudio.onerror = () => {
-          if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
+          updateRayMuteButton();
           listeningResumeAt = Date.now() + 450;
           stopReplyAudio();
           chatStatusEl.textContent = conversationActive ? "Open Mic on. Start speaking any time." : "";
@@ -958,12 +958,12 @@ function stopRayVoiceOnly() {
 
           welcomeAudio.onplay = () => {
             isPlayingWelcome = true;
-            if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
+           updateRayMuteButton();
             setVoiceState("speaking", "Playing welcome...");
           };
 
           welcomeAudio.onended = () => {
-            if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
+            updateRayMuteButton();
             isPlayingWelcome = false;
             chatStatusEl.textContent = conversationActive ? "Open Mic on. Start speaking any time." : "";
             if (conversationActive) {
@@ -974,7 +974,7 @@ function stopRayVoiceOnly() {
           };
 
           welcomeAudio.onerror = () => {
-            if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
+            updateRayMuteButton();
             isPlayingWelcome = false;
             chatStatusEl.textContent = "";
             if (conversationActive) {
@@ -1432,7 +1432,7 @@ async function toggleConversation() {
       conversationActive = false;
       updateOpenMicIndicator();
       chatStatusEl.textContent = "";
-      if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
+      updateRayMuteButton();
       setVoiceState("idle", "");
 
       if (monitorFrame) {
@@ -1589,7 +1589,8 @@ async function toggleConversation() {
   });
 
   updateOpenMicIndicator();
-  setCoachTitle(getWixMemberName());
+updateRayMuteButton();
+setCoachTitle(getWixMemberName());
 
   if (!hasResolvedPlan) {
     wixPlanName = "Ray Pro";
