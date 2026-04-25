@@ -74,7 +74,7 @@
       text-align: center;
     }
 
-  .mic-indicator {
+.mic-indicator {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -362,8 +362,8 @@
           <input type="text" id="chat-input" placeholder="Ask Ray a question..." />
           <button id="send-chat-btn" class="upload-btn" type="button">Send Text</button>
           <button id="begin-btn" class="voice-btn" type="button">Begin Conversation</button>
-          <button id="pause-ray-btn" class="voice-btn secondary" type="button">Pause Ray</button>
-          <button id="stop-conversation-btn" class="voice-btn secondary" type="button">Mic Off</button>
+          <button id="pause-ray-btn" class="voice-btn secondary" type="button">Mute Ray</button>
+          <button id="stop-conversation-btn" class="voice-btn secondary" type="button" style="display:none;">Mic Off</button>
         </div>
 
         <div id="chat-status"></div>
@@ -645,9 +645,10 @@
     const coachTitleEl = document.getElementById("coach-title");
 
     let currentReplyAudio = null;
-    let currentReplyAudioUrl = null;
-    let welcomeAudio = null;
-    let isPlayingWelcome = false;
+let currentReplyAudioUrl = null;
+let welcomeAudio = null;
+let isPlayingWelcome = false;
+let rayMuted = false;
 
     let mediaStream = null;
     let mediaRecorder = null;
@@ -734,85 +735,111 @@
     }
 
     function updateOpenMicIndicator() {
-      openMicIndicatorEl.classList.toggle("on", conversationActive);
-      openMicTextEl.textContent = conversationActive ? "Open Mic On" : "Open Mic Off";
-      beginBtn.disabled = conversationActive;
-      stopConversationBtn.disabled = !conversationActive;
-    }
+  openMicIndicatorEl.classList.toggle("on", conversationActive);
+  openMicTextEl.textContent = conversationActive ? "Open Mic On" : "Open Mic Off";
 
+  beginBtn.textContent = conversationActive ? "End Conversation" : "Begin Conversation";
+  beginBtn.disabled = false;
+
+  if (stopConversationBtn) {
+    stopConversationBtn.style.display = "none";
+    stopConversationBtn.disabled = true;
+  }
+}
     function stopReplyAudio() {
-      if (currentReplyAudio) {
-        currentReplyAudio.pause();
-        currentReplyAudio.currentTime = 0;
-        currentReplyAudio = null;
-      }
+  if (currentReplyAudio) {
+    currentReplyAudio.pause();
+    currentReplyAudio.currentTime = 0;
+    currentReplyAudio = null;
+  }
 
-      if (currentReplyAudioUrl) {
-        URL.revokeObjectURL(currentReplyAudioUrl);
-        currentReplyAudioUrl = null;
-      }
+  if (currentReplyAudioUrl) {
+    URL.revokeObjectURL(currentReplyAudioUrl);
+    currentReplyAudioUrl = null;
+  }
 
-      if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
+  updateRayMuteButton();
 
-      if (!conversationActive && !isGeneratingSpeech && !isPlayingWelcome) {
-        setVoiceState("idle", "");
-      }
-    }
+  if (!conversationActive && !isGeneratingSpeech && !isPlayingWelcome) {
+    setVoiceState("idle", "");
+  }
+}
 
-    function stopWelcomeAudio() {
-      if (welcomeAudio) {
-        welcomeAudio.pause();
-        welcomeAudio.currentTime = 0;
-      }
-      isPlayingWelcome = false;
-      if (pauseRayBtn) pauseRayBtn.textContent = "Pause Ray";
-      if (!conversationActive && !currentReplyAudio && !isGeneratingSpeech) {
-        setVoiceState("idle", "");
-      }
-    }
+   function stopWelcomeAudio() {
+  if (welcomeAudio) {
+    welcomeAudio.pause();
+    welcomeAudio.currentTime = 0;
+  }
 
-    function stopAllVoicePlayback() {
-      stopReplyAudio();
-      stopWelcomeAudio();
-    }
+  isPlayingWelcome = false;
+  updateRayMuteButton();
 
-    function togglePauseRay() {
-      if (currentReplyAudio) {
-        if (currentReplyAudio.paused) {
-          currentReplyAudio.play().then(() => {
-            pauseRayBtn.textContent = "Pause Ray";
-            setVoiceState("speaking", "Ray is speaking...");
-          }).catch((err) => {
-            console.error("Could not resume Ray audio:", err);
-          });
-        } else {
-          currentReplyAudio.pause();
-          pauseRayBtn.textContent = "Resume Ray";
-          setVoiceState("idle", "Ray paused");
-        }
-        return;
-      }
+  if (!conversationActive && !currentReplyAudio && !isGeneratingSpeech) {
+    setVoiceState("idle", "");
+  }
+}
 
-      if (welcomeAudio && isPlayingWelcome) {
-        if (welcomeAudio.paused) {
-          welcomeAudio.play().then(() => {
-            pauseRayBtn.textContent = "Pause Ray";
-            setVoiceState("speaking", "Playing welcome...");
-          }).catch((err) => {
-            console.error("Could not resume welcome audio:", err);
-          });
-        } else {
-          welcomeAudio.pause();
-          pauseRayBtn.textContent = "Resume Ray";
-          setVoiceState("idle", "Ray paused");
-        }
-      }
-    }
+   function stopAllVoicePlayback() {
+  stopReplyAudio();
+  stopWelcomeAudio();
+}
 
-    function playAudioBase64(audioBase64) {
-      stopReplyAudio();
-      if (!audioBase64) return;
+function updateRayMuteButton() {
+  if (!pauseRayBtn) return;
+  pauseRayBtn.textContent = rayMuted ? "Unmute Ray" : "Mute Ray";
+}
 
+function stopRayVoiceOnly() {
+  if (currentReplyAudio) {
+    currentReplyAudio.pause();
+    currentReplyAudio.currentTime = 0;
+    currentReplyAudio = null;
+  }
+
+  if (currentReplyAudioUrl) {
+    URL.revokeObjectURL(currentReplyAudioUrl);
+    currentReplyAudioUrl = null;
+  }
+
+  if (welcomeAudio) {
+    welcomeAudio.pause();
+    welcomeAudio.currentTime = 0;
+  }
+
+  isPlayingWelcome = false;
+}
+   function togglePauseRay() {
+  rayMuted = !rayMuted;
+  updateRayMuteButton();
+
+  if (rayMuted) {
+    stopRayVoiceOnly();
+    setVoiceState("idle", "Ray muted");
+    chatStatusEl.textContent = conversationActive
+      ? "Open Mic on. Ray voice is muted."
+      : "Ray voice is muted.";
+    return;
+  }
+
+  chatStatusEl.textContent = conversationActive
+    ? "Open Mic on. Start speaking any time."
+    : "";
+
+  if (conversationActive) {
+    setVoiceState("listening", "Open Mic on");
+  } else {
+    setVoiceState("idle", "");
+  }
+}
+   function playAudioBase64(audioBase64) {
+  stopReplyAudio();
+
+  if (rayMuted) {
+    updateRayMuteButton();
+    return;
+  }
+
+  if (!audioBase64) return;
       try {
         const byteCharacters = atob(audioBase64);
         const byteNumbers = new Array(byteCharacters.length);
@@ -862,9 +889,14 @@
     }
 
     async function speakReply(reply) {
-      if (!reply) return;
+  if (!reply) return;
 
-      isGeneratingSpeech = true;
+  if (rayMuted) {
+    updateRayMuteButton();
+    return;
+  }
+
+  isGeneratingSpeech = true;
       chatStatusEl.textContent = "Generating Ray's voice...";
 
       try {
@@ -908,14 +940,18 @@
   replayWelcome(force);
 }
 
-   function replayWelcome(force = false) {
-      try {
-        const introUrl = getIntroUrlForPlan(wixPlanName);
+  function replayWelcome(force = false) {
+  try {
+    const introUrl = getIntroUrlForPlan(wixPlanName);
 
-        if (!introUrl) return;
+    if (!introUrl) return;
 
-        stopReplyAudio();
+    if (rayMuted) {
+      updateRayMuteButton();
+      return;
+    }
 
+    stopReplyAudio();
         if (!welcomeAudio) {
           welcomeAudio = new Audio(introUrl);
           welcomeAudio.playbackRate = 1.18;
@@ -1191,7 +1227,7 @@
       chatInput.value = "";
       chatStatusEl.textContent = "Ray is thinking...";
       sendChatBtn.disabled = true;
-      beginBtn.disabled = true;
+     updateOpenMicIndicator();
 
       try {
         const res = await fetch(CHAT_URL, {
@@ -1231,7 +1267,7 @@
         chatStatusEl.textContent = "Chat failed. Please try again.";
       } finally {
         sendChatBtn.disabled = false;
-        beginBtn.disabled = conversationActive;
+        updateOpenMicIndicator();
       }
     }
 
@@ -1361,7 +1397,14 @@
 
       monitorFrame = requestAnimationFrame(monitorConversation);
     }
+async function toggleConversation() {
+  if (conversationActive) {
+    await stopConversation();
+    return;
+  }
 
+  await beginConversation();
+}
     async function beginConversation() {
       if (conversationActive) return;
 
@@ -1371,6 +1414,7 @@
         await ensureMicReady();
         conversationActive = true;
         updateOpenMicIndicator();
+        updateRayMuteButton();
         chatStatusEl.textContent = "Open Mic on. Start speaking any time.";
         setVoiceState("listening", "Open Mic on");
 
@@ -1427,7 +1471,7 @@
       formData.append("projectName", getSelectedProjectName());
 
       sendChatBtn.disabled = true;
-      beginBtn.disabled = true;
+      updateOpenMicIndicator();
 
       try {
         const res = await fetch(VOICE_CHAT_URL, {
@@ -1481,7 +1525,7 @@
         chatStatusEl.textContent = "Voice chat failed. Please try again.";
       } finally {
         sendChatBtn.disabled = false;
-        beginBtn.disabled = conversationActive;
+        updateOpenMicIndicator();
       }
     }
 
@@ -1656,7 +1700,7 @@
     replayWelcomeBtn.addEventListener("click", () => {
       maybeAutoPlayWelcome(true);
     });
-    beginBtn.addEventListener("click", beginConversation);
+    beginBtn.addEventListener("click", toggleConversation);
     pauseRayBtn.addEventListener("click", togglePauseRay);
     stopConversationBtn.addEventListener("click", stopConversation);
     sendChatBtn.addEventListener("click", sendChatMessage);
