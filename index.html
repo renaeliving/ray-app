@@ -614,6 +614,28 @@
     const clearChatBtn = document.getElementById("clear-chat-btn");
 
     const replayWelcomeBtn = document.getElementById("replay-welcome-btn");
+    function updateWelcomeButton() {
+  const key = getWelcomeKey();
+  const hasPlayed = localStorage.getItem(key) === "true";
+
+  if (!replayWelcomeBtn) return;
+
+  if (!hasPlayed) {
+    replayWelcomeBtn.textContent = "Start Here – Welcome";
+
+    replayWelcomeBtn.style.background = "#ffffff";
+    replayWelcomeBtn.style.color = "#020617";
+    replayWelcomeBtn.style.fontSize = "0.95rem";
+    replayWelcomeBtn.style.fontWeight = "600";
+  } else {
+    replayWelcomeBtn.textContent = "Replay Welcome";
+
+    replayWelcomeBtn.style.background = "";
+    replayWelcomeBtn.style.color = "";
+    replayWelcomeBtn.style.fontSize = "";
+    replayWelcomeBtn.style.fontWeight = "";
+  }
+}
     const voiceStateEl = document.getElementById("voice-state");
     const rayImageWrap = document.getElementById("ray-image-wrap");
     const beginBtn = document.getElementById("begin-btn");
@@ -872,19 +894,22 @@
     }
 
     function maybeAutoPlayWelcome(force = false) {
-      if (!force && (isPlayingWelcome || currentReplyAudio)) return;
+  if (!force && (isPlayingWelcome || currentReplyAudio)) return;
 
-      const introUrl = getIntroUrlForPlan(wixPlanName);
-      if (!introUrl) return;
+  const introUrl = getIntroUrlForPlan(wixPlanName);
+  if (!introUrl) return;
 
-      const welcomeKey = getWelcomeKey();
-      if (!force && localStorage.getItem(welcomeKey) === "true") return;
+  const welcomeKey = getWelcomeKey();
 
-      localStorage.setItem(welcomeKey, "true");
-      replayWelcome();
-    }
+  if (!force && localStorage.getItem(welcomeKey) === "true") {
+    updateWelcomeButton();
+    return;
+  }
 
-    function replayWelcome() {
+  replayWelcome(force);
+}
+
+   function replayWelcome(force = false) {
       try {
         const introUrl = getIntroUrlForPlan(wixPlanName);
 
@@ -929,9 +954,18 @@
           welcomeAudio.src = introUrl;
         }
 
-        welcomeAudio.play().catch((err) => {
-          console.error("Intro audio could not play:", err);
-        });
+       welcomeAudio.play()
+  .then(() => {
+    console.log("Ray Pro welcome audio started successfully.");
+
+    localStorage.setItem(getWelcomeKey(), "true");
+    updateWelcomeButton();
+  })
+  .catch((err) => {
+    console.error("Intro audio could not play:", err);
+
+    updateWelcomeButton();
+  });
       } catch (err) {
         console.error(err);
       }
@@ -1520,6 +1554,8 @@
     applyUploadAccess(wixPlanName);
     maybeAutoPlayWelcome();
   }
+
+  updateWelcomeButton();
 }
 
     projectNameInput.addEventListener("change", () => {
