@@ -1264,14 +1264,14 @@ function stopRayVoiceOnly() {
 
   if (!message) return;
 
-  await unlockMobileAudio();
+await unlockMobileAudio();
 
-  if (!currentUserId) {
-    chatStatusEl.textContent = "User session not found. Please return to the site and launch Ray again.";
-    return;
-  }
+if (!currentUserId) {
+  chatStatusEl.textContent = "User session not found. Please return to the site and launch Ray again.";
+  return;
+}
 
-  stopReplyAudio();
+      stopReplyAudio();
   addChatMessage("user", message);
   chatInput.value = "";
   chatStatusEl.textContent = "Ray is thinking...";
