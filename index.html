@@ -1454,10 +1454,10 @@ async function toggleConversation() {
 
   await beginConversation();
 }
-    async function beginConversation() {
+   async function beginConversation() {
      if (conversationActive) return;
 
-await unlockMobileAudio();
+unlockMobileAudio();
 
 stopAllVoicePlayback();
 
@@ -1749,17 +1749,17 @@ setCoachTitle(getWixMemberName());
       }
     });
 
-   replayWelcomeBtn.addEventListener("click", async () => {
-  await unlockMobileAudio();
+  replayWelcomeBtn.addEventListener("click", () => {
+  unlockMobileAudio();
   maybeAutoPlayWelcome(true);
   updateWelcomeButton();
 });
-    beginBtn.addEventListener("click", async () => {
-  await unlockMobileAudio();
-  await toggleConversation();
+    beginBtn.addEventListener("click", () => {
+  unlockMobileAudio();
+  toggleConversation();
 });
-    pauseRayBtn.addEventListener("click", async () => {
-  await unlockMobileAudio();
+   pauseRayBtn.addEventListener("click", () => {
+  unlockMobileAudio();
   togglePauseRay();
 });
     stopConversationBtn.addEventListener("click", stopConversation);
