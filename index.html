@@ -816,18 +816,6 @@ async function unlockMobileAudio() {
   }
 }
 
-  if (currentReplyAudioUrl) {
-    URL.revokeObjectURL(currentReplyAudioUrl);
-    currentReplyAudioUrl = null;
-  }
-
-  updateRayMuteButton();
-
-  if (!conversationActive && !isGeneratingSpeech && !isPlayingWelcome) {
-    setVoiceState("idle", "");
-  }
-}
-
    function stopWelcomeAudio() {
   if (welcomeAudio) {
     welcomeAudio.pause();
