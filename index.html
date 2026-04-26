@@ -1257,65 +1257,68 @@ function stopRayVoiceOnly() {
       if (uploadPanelEl) uploadPanelEl.style.display = "";
     }
 
-    async function sendChatMessage() {
-      const message = (chatInput.value || "").trim();
-      const projectName = getSelectedProjectName();
-      const currentUserId = getWixUserId();
+   async function sendChatMessage() {
+  const message = (chatInput.value || "").trim();
+  const projectName = getSelectedProjectName();
+  const currentUserId = getWixUserId();
 
-     if (!message) return;
+  if (!message) return;
 
-await unlockMobileAudio();
+  await unlockMobileAudio();
 
-if (!currentUserId) {
+  if (!currentUserId) {
+    chatStatusEl.textContent = "User session not found. Please return to the site and launch Ray again.";
+    return;
+  }
 
-      stopReplyAudio();
-      addChatMessage("user", message);
-      chatInput.value = "";
-      chatStatusEl.textContent = "Ray is thinking...";
-      sendChatBtn.disabled = true;
-     updateOpenMicIndicator();
+  stopReplyAudio();
+  addChatMessage("user", message);
+  chatInput.value = "";
+  chatStatusEl.textContent = "Ray is thinking...";
+  sendChatBtn.disabled = true;
+  updateOpenMicIndicator();
 
-      try {
-        const res = await fetch(CHAT_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            userId: currentUserId,
-            projectName,
-            message,
-            includeAudio: false,
-            voiceMode: true
-          })
-        });
+  try {
+    const res = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        userId: currentUserId,
+        projectName,
+        message,
+        includeAudio: false,
+        voiceMode: true
+      })
+    });
 
-        const data = await res.json();
+    const data = await res.json();
 
-        if (!res.ok) {
-          throw new Error(data.error || "Chat failed");
-        }
-
-        const reply = data.reply || "No response.";
-        addChatMessage("assistant", reply);
-        chatStatusEl.textContent = "";
-        speakReply(reply);
-
-        if (projectName) {
-          addProjectNameToSavedList(projectName);
-          localStorage.setItem(LAST_PROJECT_KEY, projectName);
-          renderProjectNameOptions();
-          projectNameInput.value = projectName;
-          syncProjectInputMode();
-        }
-      } catch (err) {
-        console.error(err);
-        chatStatusEl.textContent = "Chat failed. Please try again.";
-      } finally {
-        sendChatBtn.disabled = false;
-        updateOpenMicIndicator();
-      }
+    if (!res.ok) {
+      throw new Error(data.error || "Chat failed");
     }
+
+    const reply = data.reply || "No response.";
+    addChatMessage("assistant", reply);
+    chatStatusEl.textContent = "";
+    speakReply(reply);
+
+    if (projectName) {
+      addProjectNameToSavedList(projectName);
+      localStorage.setItem(LAST_PROJECT_KEY, projectName);
+      renderProjectNameOptions();
+      projectNameInput.value = projectName;
+      syncProjectInputMode();
+    }
+  } catch (err) {
+    console.error(err);
+    chatStatusEl.textContent = "Chat failed. Please try again.";
+  } finally {
+    sendChatBtn.disabled = false;
+    updateOpenMicIndicator();
+  }
+}
 
     async function ensureMicReady() {
       if (mediaStream && analyser && audioContext) return;
