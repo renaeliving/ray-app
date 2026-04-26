@@ -1262,9 +1262,9 @@ function stopRayVoiceOnly() {
   const projectName = getSelectedProjectName();
   const currentUserId = getWixUserId();
 
-  if (!message) return;
+ if (!message) return;
 
-await unlockMobileAudio();
+unlockMobileAudio();
 
 if (!currentUserId) {
   chatStatusEl.textContent = "User session not found. Please return to the site and launch Ray again.";
