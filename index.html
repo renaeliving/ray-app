@@ -650,6 +650,10 @@ let welcomeAudio = null;
 let isPlayingWelcome = false;
 let rayMuted = false;
 
+let mobileAudioUnlocked = false;
+let mobileAudioContext = null;
+let mobileUnlockAudio = null;
+
     let mediaStream = null;
     let mediaRecorder = null;
     let analyser = null;
@@ -724,7 +728,49 @@ let rayMuted = false;
       chatHistoryEl.appendChild(msg);
       chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
     }
+async function unlockMobileAudio() {
+  if (mobileAudioUnlocked) return;
 
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+    if (AudioContextClass) {
+      if (!mobileAudioContext) {
+        mobileAudioContext = new AudioContextClass();
+      }
+
+      if (mobileAudioContext.state === "suspended") {
+        await mobileAudioContext.resume();
+      }
+
+      const buffer = mobileAudioContext.createBuffer(1, 1, 22050);
+      const source = mobileAudioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(mobileAudioContext.destination);
+      source.start(0);
+    }
+  } catch (err) {
+    console.warn("Mobile AudioContext unlock failed:", err);
+  }
+
+  try {
+    if (!mobileUnlockAudio) {
+      mobileUnlockAudio = new Audio(
+        "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQQAAAAAAA=="
+      );
+      mobileUnlockAudio.muted = true;
+      mobileUnlockAudio.playsInline = true;
+    }
+
+    await mobileUnlockAudio.play();
+    mobileUnlockAudio.pause();
+    mobileUnlockAudio.currentTime = 0;
+  } catch (err) {
+    console.warn("Mobile silent audio unlock failed:", err);
+  }
+
+  mobileAudioUnlocked = true;
+}
     function setVoiceState(state, text = "") {
       rayImageWrap.classList.remove("listening", "speaking");
 
@@ -1216,11 +1262,11 @@ function stopRayVoiceOnly() {
       const projectName = getSelectedProjectName();
       const currentUserId = getWixUserId();
 
-      if (!message) return;
-      if (!currentUserId) {
-        chatStatusEl.textContent = "User session not found. Please return to the site and launch Ray again.";
-        return;
-      }
+     if (!message) return;
+
+await unlockMobileAudio();
+
+if (!currentUserId) {
 
       stopReplyAudio();
       addChatMessage("user", message);
@@ -1406,9 +1452,11 @@ async function toggleConversation() {
   await beginConversation();
 }
     async function beginConversation() {
-      if (conversationActive) return;
+     if (conversationActive) return;
 
-      stopAllVoicePlayback();
+await unlockMobileAudio();
+
+stopAllVoicePlayback();
 
       try {
         await ensureMicReady();
@@ -1698,11 +1746,19 @@ setCoachTitle(getWixMemberName());
       }
     });
 
-    replayWelcomeBtn.addEventListener("click", () => {
-      maybeAutoPlayWelcome(true);
-    });
-    beginBtn.addEventListener("click", toggleConversation);
-    pauseRayBtn.addEventListener("click", togglePauseRay);
+   replayWelcomeBtn.addEventListener("click", async () => {
+  await unlockMobileAudio();
+  maybeAutoPlayWelcome(true);
+  updateWelcomeButton();
+});
+    beginBtn.addEventListener("click", async () => {
+  await unlockMobileAudio();
+  await toggleConversation();
+});
+    pauseRayBtn.addEventListener("click", async () => {
+  await unlockMobileAudio();
+  togglePauseRay();
+});
     stopConversationBtn.addEventListener("click", stopConversation);
     sendChatBtn.addEventListener("click", sendChatMessage);
     clearChatBtn.addEventListener("click", clearChatHistory);
